@@ -1,0 +1,829 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>العمدة للأخشاب</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Reem+Kufi:wght@500;700&display=swap">
+<style>
+/* Layout: right rail groups stock by kind (timber, boards, misc) in RTL; main ledger shows timber as thickness groups with size tables, boards as a thickness-and-count list, misc as a name-and-count list; movement log sits below. */
+:root{
+  --bg:#EDEFEA; --surface:#F8F9F6; --surface-2:#E4E8E0; --fg:#1B2420; --muted:#58665E; --line:#CBD2C6;
+  --accent:#1F6F54; --accent-fg:#FFFFFF; --accent-soft:#D3E8DE;
+  --warn:#8F4F0C; --warn-soft:#F3E1C6; --bad:#A33A2B; --bad-soft:#F3D8D2;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic","Segoe UI",Tahoma,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121816; --surface:#1A2320; --surface-2:#222D29; --fg:#E6ECE7; --muted:#93A29A; --line:#2F3C37;
+    --accent:#5FC49B; --accent-fg:#0E1A15; --accent-soft:#1F3A30;
+    --warn:#E0A25A; --warn-soft:#3A2C18; --bad:#E58A7A; --bad-soft:#3E211C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121816; --surface:#1A2320; --surface-2:#222D29; --fg:#E6ECE7; --muted:#93A29A; --line:#2F3C37;
+  --accent:#5FC49B; --accent-fg:#0E1A15; --accent-soft:#1F3A30;
+  --warn:#E0A25A; --warn-soft:#3A2C18; --bad:#E58A7A; --bad-soft:#3E211C;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:15px/1.6 var(--f-body);
+  padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1120px;margin-inline:auto}
+h1,h2,h3{font-family:var(--f-display);margin:0;font-weight:700;text-wrap:balance}
+p{margin:0}
+button{font-family:inherit}
+
+/* top bar */
+.top{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand svg{flex:none;color:var(--accent)}
+.brand h1{font-size:26px;line-height:1.2}
+.brand p{font-size:12px;color:var(--muted)}
+.top-r{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+.stats{display:flex;gap:22px}
+.stat{display:flex;flex-direction:column;line-height:1.3}
+.stat small{font-size:11px;color:var(--muted);letter-spacing:.02em}
+.stat b{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* buttons + fields */
+.btn{font-size:14px;padding:7px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;min-height:42px;line-height:1.3;touch-action:manipulation}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.in{color:var(--accent);border-color:var(--accent)}
+.btn.out{color:var(--warn);border-color:var(--warn)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--fg)}
+.btn:focus-visible,input:focus-visible,.wood-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+input[type=text]{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:38px;width:100%;min-width:0}
+input[dir=ltr]{text-align:center}
+input::placeholder{color:var(--muted);opacity:.7}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+
+/* notices */
+.note{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--accent-soft);margin-bottom:16px;font-size:14px}
+.note.warn{background:var(--warn-soft)}
+.note.bad{background:var(--bad-soft)}
+.note .row{display:flex;gap:8px;flex-wrap:wrap}
+.err{color:var(--bad);font-size:13px;margin-top:6px}
+
+/* layout */
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start}
+.rail h2{font-size:13px;color:var(--muted);font-family:var(--f-body);font-weight:500;letter-spacing:.02em;margin-bottom:2px}
+.rail .grp{font-family:var(--f-body);font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.02em;margin:14px 0 6px}
+.rail-list{display:flex;flex-direction:column;gap:6px}
+.wood-btn{display:flex;align-items:center;gap:12px;width:100%;text-align:start;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);cursor:pointer}
+.wood-btn:hover{background:var(--surface-2)}
+.wood-btn.on{background:var(--accent-soft);border-color:var(--accent)}
+.wb-t{display:flex;flex-direction:column;min-width:0;line-height:1.35}
+.wb-t b{font-weight:600;overflow-wrap:anywhere}
+.wb-t small{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.sw{flex:none;width:12px;height:38px;border-radius:2px;background:
+  repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 5px),var(--wc);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.22)}
+.sw.board{background:repeating-linear-gradient(0deg,rgba(0,0,0,.26) 0 2px,transparent 2px 6px),var(--wc)}
+.sw.misc{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--muted);border-radius:3px}
+.rail form{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.rail .row{display:flex;gap:8px;margin-top:10px}
+.seg{display:flex;gap:6px;margin-bottom:10px}
+.seg .btn{flex:1;padding-inline:6px;font-size:12px}
+.seg .btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+/* wood header */
+.wood-head{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.wood-head h2{font-size:28px;line-height:1.25;overflow-wrap:anywhere}
+.wood-sum{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.wood-sum b{color:var(--fg);font-weight:600}
+.head-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.legend{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+/* cards + tables */
+.th{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:16px;overflow:hidden}
+.th-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.th-id{display:flex;align-items:center;gap:12px;min-width:0}
+.th-id svg{flex:none}
+.th-id h3{font-size:20px;line-height:1.2}
+.th-id p{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.th-act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:12px;font-weight:500;color:var(--muted);text-align:start;padding:8px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.zero td{color:var(--muted)}
+tr.main td{border-bottom:1px solid var(--line)}
+tr.main td.acts{text-align:end;white-space:nowrap}
+td.acts .btn{margin-inline-start:4px}
+td.nm{overflow-wrap:anywhere;min-width:120px}
+.thc{display:inline-flex;align-items:center;gap:10px}
+.thc svg{flex:none}
+tr.sub td{background:var(--surface-2)}
+.pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;margin-inline-start:6px;vertical-align:middle}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.inline{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.inline .fld{width:150px}
+.inline .hint{font-size:12px;color:var(--muted);align-self:center}
+.inline .ask{align-self:center;font-size:14px}
+.add-size{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end;padding:12px 14px;background:var(--surface-2);border-top:1px solid var(--line)}
+.add-size.two{grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto}
+.empty-th{padding:16px 14px;color:var(--muted);font-size:14px}
+.add-th{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:14px;border:1px dashed var(--line);border-radius:10px}
+.add-th .fld{width:200px}
+
+/* empty states */
+.empty{padding:28px 20px;border:1px dashed var(--line);border-radius:10px;background:var(--surface)}
+.empty h2{font-size:22px;margin-bottom:6px}
+.empty p{color:var(--muted);max-width:60ch;margin-bottom:14px}
+
+/* log */
+.log{margin-top:28px}
+.log h2{font-size:18px;margin-bottom:10px}
+.log ul{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:340px;overflow-y:auto}
+.log li{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;padding:9px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.log li:last-child{border-bottom:0}
+.log time{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:84px}
+.tag{font-size:12px;padding:1px 10px;border-radius:99px;min-width:56px;text-align:center}
+.tag.in{background:var(--accent-soft);color:var(--accent)}
+.tag.out{background:var(--warn-soft);color:var(--warn)}
+.tag.adj,.tag.del{background:var(--surface-2);color:var(--muted)}
+.log .what{min-width:0;overflow-wrap:anywhere}
+.log .none{padding:16px 14px;color:var(--muted);font-size:14px}
+
+.toast{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;pointer-events:none;
+  padding:0 max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-right,0px))}
+.toast span{background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px}
+
+@media (max-width:760px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:16px}
+  .rail-list{flex-direction:row;overflow-x:auto;padding-bottom:6px}
+  .wood-btn{width:auto;min-width:170px;flex:none}
+  .stats{gap:16px}
+  .wood-head h2{font-size:24px}
+}
+@media (max-width:560px){
+  .add-size{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .add-size.two{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+  .add-size .btn{grid-column:1/-1}
+  .inline .fld{width:calc(50% - 5px)}
+  td,th{padding-inline:8px}
+  tr.main td.acts{white-space:normal;min-width:132px}
+  td.acts .btn{margin:2px;padding:5px 10px;min-height:38px}
+}
+@media (max-width:480px){
+  thead th:nth-child(4),tr.main td:nth-child(4){display:none}
+}
+</style>
+
+<div class="wrap" id="app" dir="rtl" lang="ar"></div>
+
+<script>
+(function(){
+"use strict";
+var $app=document.getElementById('app');
+var WC=['#B07A3E','#8C5B34','#C9A06A','#6B3F26','#D2B07F','#9A6B4A','#7A4B2E','#BC8E5A'];
+var KINDS={
+  timber:{label:'أخشاب',group:'أخشاب',unit:'قطعة',ph:'زان، موسكي، سويد…',nameLabel:'اسم النوع'},
+  board:{label:'ألواح',group:'ألواح (أبلاكاش وفايبر وكونتر)',unit:'لوح',ph:'أبلاكاش، فايبر، كونتر…',nameLabel:'اسم النوع'},
+  misc:{label:'متنوعات',group:'متنوعات',unit:'',ph:'بكتات، إكسسوارات، خامات…',nameLabel:'اسم المجموعة'}
+};
+var KORDER=['timber','board','misc'];
+var S={newKind:'timber',woods:[],log:[],sel:null,loaded:false,slow:false,mode:'wait',hideZero:false,
+  drafts:{},ferr:null,row:null,delWood:false,delTh:null,addWood:false,rename:false,clearAsk:false,toast:'',canExport:false};
+var db=null,dl=null,chains={},toastT=null;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmt3(n){return n.toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3});}
+function fmtN(n){return n.toLocaleString('en-US');}
+function fmtDim(n){return String(Math.round(n*1000)/1000);}
+function num(s){
+  if(s==null)return NaN;
+  s=String(s).trim().replace(/[٠-٩]/g,function(d){return '٠١٢٣٤٥٦٧٨٩'.indexOf(d);}).replace(/[٫,،]/g,'.');
+  if(s==='')return NaN;
+  var n=Number(s);return isFinite(n)?n:NaN;
+}
+function uid(){return Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function rd(id){var el=document.getElementById(id);return el?el.value:'';}
+function V(id,def){return S.drafts[id]!==undefined?S.drafts[id]:def;}
+function clearDrafts(prefix){Object.keys(S.drafts).forEach(function(k){if(k.indexOf(prefix)===0)delete S.drafts[k];});}
+function kindOf(w){return w.kind||'timber';}
+function unitOf(w){return KINDS[kindOf(w)].unit;}
+function vol(t,s){return (t.mm/1000)*(s.wid/100)*s.len*s.qty;}
+function ths(w){return w.thicknesses||[];}
+function items(w){return w.items||[];}
+/* a board thickness holds one count; older entries that still carry sizes are summed */
+function bq(t){return t.qty!==undefined?t.qty:(t.sizes||[]).reduce(function(m,s){return m+s.qty;},0);}
+function totals(w){
+  var k=kindOf(w),p=0,v=0,q=0;
+  if(k==='misc'){items(w).forEach(function(i){q+=i.qty;});return {p:0,v:0,n:items(w).length,q:q};}
+  if(k==='board'){ths(w).forEach(function(t){p+=bq(t);});return {p:p,v:0,n:ths(w).length,q:0};}
+  ths(w).forEach(function(t){t.sizes.forEach(function(s){p+=s.qty;v+=vol(t,s);});});
+  return {p:p,v:v,n:ths(w).length,q:0};
+}
+function thTotals(t){var p=0,v=0;t.sizes.forEach(function(s){p+=s.qty;v+=vol(t,s);});return {p:p,v:v};}
+function curWood(){return S.woods.find(function(w){return w.id===S.sel;})||null;}
+function setErr(k,msg){S.ferr={k:k,msg:msg};render();}
+function errBox(k){return S.ferr&&S.ferr.k===k?'<p class="err" role="alert">'+esc(S.ferr.msg)+'</p>':'';}
+function focusId(id){setTimeout(function(){var el=document.getElementById(id);if(el)el.focus();},0);}
+function toast(msg){
+  S.toast=msg;render();clearTimeout(toastT);
+  toastT=setTimeout(function(){S.toast='';render();},3200);
+}
+function savePref(){try{localStorage.setItem('wood.pref',JSON.stringify({sel:S.sel,hz:S.hideZero}));}catch(e){}}
+function loadPref(){try{var p=JSON.parse(localStorage.getItem('wood.pref')||'null');if(p){S.hideZero=!!p.hz;return p.sel||null;}}catch(e){}return null;}
+function pad(n){return n<10?'0'+n:''+n;}
+function fmtTime(t){var d=new Date(t);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+function same(a,b){return Math.abs(a-b)<1e-9;}
+function lowPill(q){return q===0?'<span class="pill bad">نفد</span>':(q<=5?'<span class="pill warn">قليل</span>':'');}
+
+/* ---------- persistence ---------- */
+function enqueue(key,fn){
+  chains[key]=(chains[key]||Promise.resolve()).then(fn).catch(function(){
+    S.ferr={k:'global',msg:'التعديل الأخير ما اتحفظش. جرّب تاني.'};render();
+  });
+}
+function saveLocalData(){
+  if(db)return;
+  try{localStorage.setItem('wood.inventory.v1',JSON.stringify({woods:S.woods,log:S.log.slice(0,300)}));}
+  catch(e){S.ferr={k:'global',msg:'مساحة الحفظ في المتصفح ممتلئة أو غير متاحة. صدّر نسخة احتياطية من البيانات.'};}
+}
+function persistWood(w){if(!db){saveLocalData();return;}var c=clone(w);enqueue('w:'+w.id,function(){return db.doc('woods/'+c.id).set(c);});}
+function removeWoodDoc(id){if(!db){saveLocalData();return;}enqueue('w:'+id,function(){return db.doc('woods/'+id).delete();});}
+function persistLog(){if(!db){saveLocalData();return;}var it=S.log.slice(0,300);enqueue('log',function(){return db.doc('meta/log').set({items:it});});}
+function addLog(e){e.t=Date.now();S.log.unshift(e);if(S.log.length>300)S.log.length=300;persistLog();}
+function touch(w){w.updated=Date.now();persistWood(w);}
+
+/* ---------- views ---------- */
+function logo(){
+  return '<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="17" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="19" r="12" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="19" r="7" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="19" cy="19" r="2.2" fill="currentColor"/><path d="M19 19 L35 14" stroke="currentColor" stroke-width="1.4" fill="none"/></svg>';
+}
+function glyph(mm,color,board){
+  var h=Math.max(5,Math.min(26,Math.round(mm/80*26)));
+  var y=28-h,lines='';
+  if(board&&h>=9){
+    for(var ly=y+3;ly<27;ly+=3){lines+='<line x1="1" y1="'+ly+'" x2="43" y2="'+ly+'" stroke="rgba(0,0,0,.28)" stroke-width="1"/>';}
+  }
+  return '<svg width="44" height="30" viewBox="0 0 44 30" aria-hidden="true"><rect x="1" y="'+y+'" width="42" height="'+h+'" rx="2" fill="'+color+'" stroke="rgba(0,0,0,.25)" stroke-width="1"/>'+lines+'<line x1="1" y1="29" x2="43" y2="29" stroke="currentColor" stroke-width="1" opacity=".4"/></svg>';
+}
+function fld(id,label,def,ph,isNum){
+  return '<label class="fld" for="'+id+'"><span>'+label+'</span><input id="'+id+'" type="text" '+(isNum?'inputmode="decimal" dir="ltr" ':'')+'autocomplete="off" value="'+esc(V(id,def))+'" placeholder="'+esc(ph||'')+'"></label>';
+}
+function acts(d){
+  return '<td class="acts"><button type="button" class="btn in" data-act="mv" data-k="in" '+d+'>وارد</button>'+
+    '<button type="button" class="btn out" data-act="mv" data-k="out" '+d+'>منصرف</button>'+
+    '<button type="button" class="btn ghost" data-act="mv" data-k="edit" '+d+'>تعديل</button>'+
+    '<button type="button" class="btn ghost" data-act="mv" data-k="del" '+d+'>حذف</button></td>';
+}
+function mvForm(d,m,label,avail){
+  return '<form class="inline" data-form="row" '+d+'>'+fld('f-mv-q',label,'1','',true)+
+    '<button class="btn pri">تأكيد</button><button type="button" class="btn" data-act="row-no">إلغاء</button>'+
+    (m==='out'?'<span class="hint">المتاح: '+fmtN(avail)+'</span>':'')+'</form>'+errBox('row');
+}
+function delAsk(d,txt){
+  return '<div class="inline"><span class="ask">'+txt+'</span><button type="button" class="btn danger" data-act="sz-del" '+d+'>أيوه، احذف</button><button type="button" class="btn" data-act="row-no">لأ</button></div>';
+}
+
+function header(){
+  var p=0,v=0;S.woods.forEach(function(w){var t=totals(w);p+=t.p;v+=t.v;});
+  return '<header class="top"><div class="brand">'+logo()+'<div><h1>العمدة للأخشاب</h1><p>أخشاب · ألواح · متنوعات</p></div></div>'+
+    '<div class="top-r"><div class="stats">'+
+    '<div class="stat"><small>الأقسام</small><b>'+fmtN(S.woods.length)+'</b></div>'+
+    '<div class="stat"><small>قطع وألواح</small><b>'+fmtN(p)+'</b></div>'+
+    '<div class="stat"><small>حجم الخشب م³</small><b>'+fmt3(v)+'</b></div></div>'+
+    (S.canExport&&S.woods.length?'<button type="button" class="btn" data-act="export">تصدير CSV</button>':'')+
+    '</div></header>';
+}
+
+function notices(){
+  var h='';
+  if(S.mode==='local')h+='<div class="note"><span>الحفظ التلقائي شغال على هذا الجهاز والمتصفح فقط. احتفظ بنسخة CSV احتياطية من وقت لآخر.</span></div>';
+  if(S.mode==='error')h+='<div class="note bad"><span>حصلت مشكلة في تحميل البيانات. اقفل الصفحة وافتحها تاني.</span></div>';
+  if(S.ferr&&S.ferr.k==='global')h+='<div class="note bad" role="alert"><span>'+esc(S.ferr.msg)+'</span></div>';
+  if(S.woods.some(function(w){return w.example;})){
+    h+='<div class="note"><span>البيانات اللي قدامك تجريبية عشان تشوف الشكل. امسحها وابدأ بمخزونك.</span><span class="row">'+
+      (S.clearAsk?'<button type="button" class="btn danger" data-act="ex-yes">أيوه، امسح التجريبي</button><button type="button" class="btn" data-act="ex-no">لأ</button>'
+        :'<button type="button" class="btn" data-act="ex-ask">امسح البيانات التجريبية</button>')+'</span></div>';
+  }
+  return h;
+}
+
+function railSummary(w){
+  var t=totals(w),k=kindOf(w);
+  if(k==='misc')return fmtN(t.n)+' صنف · '+fmtN(t.q)+' عدد';
+  if(k==='board')return fmtN(t.p)+' لوح · '+fmtN(t.n)+' تخانة';
+  return fmtN(t.p)+' قطعة · '+fmt3(t.v)+' م³';
+}
+
+function rail(){
+  var h='<aside class="rail"><h2>المخزن</h2>';
+  KORDER.forEach(function(k){
+    var list=S.woods.filter(function(w){return kindOf(w)===k;});
+    if(!list.length)return;
+    h+='<h3 class="grp">'+KINDS[k].group+'</h3><div class="rail-list">';
+    list.forEach(function(w){
+      h+='<button type="button" class="wood-btn'+(w.id===S.sel?' on':'')+'" data-act="sel" data-id="'+w.id+'" aria-pressed="'+(w.id===S.sel)+'">'+
+        '<span class="sw'+(k==='board'?' board':'')+(k==='misc'?' misc':'')+'" style="--wc:'+WC[(w.ci||0)%WC.length]+'"></span>'+
+        '<span class="wb-t"><b>'+esc(w.name)+'</b><small>'+railSummary(w)+'</small></span></button>';
+    });
+    h+='</div>';
+  });
+  if(S.addWood||(S.loaded&&!S.woods.length)){
+    var nk=KINDS[S.newKind];
+    h+='<form data-form="add-wood"><div class="seg" role="group" aria-label="القسم">'+
+      KORDER.map(function(k){return '<button type="button" class="btn'+(S.newKind===k?' on':'')+'" data-act="kind" data-k="'+k+'" aria-pressed="'+(S.newKind===k)+'">'+KINDS[k].label+'</button>';}).join('')+'</div>'+
+      fld('f-wood-name',nk.nameLabel,'',nk.ph)+errBox('add-wood')+
+      '<div class="row"><button class="btn pri">إضافة</button>'+(S.woods.length?'<button type="button" class="btn" data-act="wood-add-no">إلغاء</button>':'')+'</div></form>';
+  }else{
+    h+='<div class="row"><button type="button" class="btn pri" data-act="wood-add">+ إضافة جديدة</button></div>';
+  }
+  return h+'</aside>';
+}
+
+/* --- timber rows --- */
+function sizeRow(w,t,s){
+  var open=S.row&&S.row.th===t.id&&S.row.sz===s.id;
+  var d='data-th="'+t.id+'" data-sz="'+s.id+'"';
+  var h='<tr class="main'+(s.qty===0?' zero':'')+'"><td class="n">'+fmtDim(s.len)+'</td><td class="n">'+fmtDim(s.wid)+'</td>'+
+    '<td class="n"><b>'+fmtN(s.qty)+'</b>'+lowPill(s.qty)+'</td><td class="n">'+fmt3(vol(t,s))+'</td>'+acts(d)+'</tr>';
+  if(open){
+    var m=S.row.mode,f='';
+    if(m==='in'||m==='out'){
+      f=mvForm(d,m,m==='in'?'الكمية الواردة (قطعة)':'الكمية المنصرفة (قطعة)',s.qty);
+    }else if(m==='edit'){
+      f='<form class="inline" data-form="row" '+d+'>'+fld('f-ed-l','الطول (م)',fmtDim(s.len),'',true)+fld('f-ed-w','العرض (سم)',fmtDim(s.wid),'',true)+fld('f-ed-q','العدد (قطعة)',String(s.qty),'',true)+
+        '<button class="btn pri">حفظ</button><button type="button" class="btn" data-act="row-no">إلغاء</button></form>'+errBox('row');
+    }else{
+      f=delAsk(d,'حذف المقاس ده نهائيًا؟');
+    }
+    h+='<tr class="sub"><td colspan="5">'+f+'</td></tr>';
+  }
+  return h;
+}
+
+function thCard(w,t){
+  var tt=thTotals(t),color=WC[(w.ci||0)%WC.length];
+  var sizes=t.sizes.slice().sort(function(a,b){return a.len-b.len||a.wid-b.wid;});
+  if(S.hideZero)sizes=sizes.filter(function(s){return s.qty>0||(S.row&&S.row.th===t.id&&S.row.sz===s.id);});
+  var h='<section class="th"><div class="th-h"><div class="th-id">'+glyph(t.mm,color,false)+'<div><h3>'+fmtDim(t.mm)+' مم</h3>'+
+    '<p>'+fmtN(t.sizes.length)+' مقاس · '+fmtN(tt.p)+' قطعة · '+fmt3(tt.v)+' م³</p></div></div><div class="th-act">';
+  if(S.delTh===t.id){
+    h+='<span>حذف التخانة و'+fmtN(t.sizes.length)+' مقاس؟</span><button type="button" class="btn danger" data-act="th-yes" data-th="'+t.id+'">أيوه</button><button type="button" class="btn" data-act="th-no">لأ</button>';
+  }else{
+    h+='<button type="button" class="btn ghost" data-act="th-ask" data-th="'+t.id+'">حذف التخانة</button>';
+  }
+  h+='</div></div>';
+  if(sizes.length){
+    h+='<div class="tbl"><table><thead><tr><th>الطول (م)</th><th>العرض (سم)</th><th>العدد</th><th>الحجم (م³)</th><th></th></tr></thead><tbody>'+
+      sizes.map(function(s){return sizeRow(w,t,s);}).join('')+'</tbody></table></div>';
+  }else{
+    h+='<p class="empty-th">'+(t.sizes.length?'كل المقاسات في التخانة دي خلصت.':'لسه مفيش مقاسات. ضيف أول مقاس من تحت.')+'</p>';
+  }
+  var k=t.id;
+  h+='<form class="add-size" data-form="add-size" data-th="'+k+'">'+fld('f-as-l-'+k,'الطول (م)','','4',true)+fld('f-as-w-'+k,'العرض (سم)','','10',true)+fld('f-as-q-'+k,'العدد','','50',true)+
+    '<button class="btn pri">إضافة مقاس</button></form>'+errBox('add-size-'+k);
+  return h+'</section>';
+}
+
+/* --- board rows: thickness + count --- */
+function thRow(w,t){
+  var q=bq(t),color=WC[(w.ci||0)%WC.length];
+  var open=S.row&&S.row.th===t.id;
+  var d='data-th="'+t.id+'" data-sz="_"';
+  var h='<tr class="main'+(q===0?' zero':'')+'"><td class="n"><span class="thc">'+glyph(t.mm,color,true)+'<b>'+fmtDim(t.mm)+' مم</b></span></td>'+
+    '<td class="n"><b>'+fmtN(q)+'</b>'+lowPill(q)+'</td>'+acts(d)+'</tr>';
+  if(open){
+    var m=S.row.mode,f='';
+    if(m==='in'||m==='out'){
+      f=mvForm(d,m,m==='in'?'الكمية الواردة (لوح)':'الكمية المنصرفة (لوح)',q);
+    }else if(m==='edit'){
+      f='<form class="inline" data-form="row" '+d+'>'+fld('f-ed-mm','التخانة (مم)',fmtDim(t.mm),'',true)+fld('f-ed-q','العدد (لوح)',String(q),'',true)+
+        '<button class="btn pri">حفظ</button><button type="button" class="btn" data-act="row-no">إلغاء</button></form>'+errBox('row');
+    }else{
+      f=delAsk(d,'حذف التخانة دي نهائيًا؟');
+    }
+    h+='<tr class="sub"><td colspan="3">'+f+'</td></tr>';
+  }
+  return h;
+}
+
+/* --- misc rows: name + count --- */
+function itemRow(w,it){
+  var open=S.row&&S.row.th==='_'&&S.row.sz===it.id;
+  var d='data-th="_" data-sz="'+it.id+'"';
+  var h='<tr class="main'+(it.qty===0?' zero':'')+'"><td class="nm"><b>'+esc(it.name)+'</b></td>'+
+    '<td class="n"><b>'+fmtN(it.qty)+'</b>'+lowPill(it.qty)+'</td>'+acts(d)+'</tr>';
+  if(open){
+    var m=S.row.mode,f='';
+    if(m==='in'||m==='out'){
+      f=mvForm(d,m,m==='in'?'الكمية الواردة':'الكمية المنصرفة',it.qty);
+    }else if(m==='edit'){
+      f='<form class="inline" data-form="row" '+d+'>'+fld('f-ed-n','اسم الصنف',it.name,'')+fld('f-ed-q','العدد',String(it.qty),'',true)+
+        '<button class="btn pri">حفظ</button><button type="button" class="btn" data-act="row-no">إلغاء</button></form>'+errBox('row');
+    }else{
+      f=delAsk(d,'حذف الصنف ده نهائيًا؟');
+    }
+    h+='<tr class="sub"><td colspan="3">'+f+'</td></tr>';
+  }
+  return h;
+}
+
+function woodHead(w,sum){
+  var h='<div class="wood-head"><div>';
+  if(S.rename){
+    h+='<form class="inline" data-form="rename">'+fld('f-rename',KINDS[kindOf(w)].nameLabel,w.name,'')+'<button class="btn pri">حفظ</button><button type="button" class="btn" data-act="rename-no">إلغاء</button></form>'+errBox('rename');
+  }else{
+    h+='<h2>'+esc(w.name)+'</h2>';
+  }
+  h+='<p class="wood-sum">'+sum+'</p></div><div class="head-act">'+
+    '<label class="chk"><input type="checkbox" data-act="hide0"'+(S.hideZero?' checked':'')+'> إخفاء اللي خلص</label>'+
+    '<button type="button" class="btn ghost" data-act="rename-open">تعديل الاسم</button>';
+  if(S.delWood){
+    h+='<span>حذف '+esc(w.name)+' بكل محتوياته؟</span><button type="button" class="btn danger" data-act="wood-yes">أيوه، احذف</button><button type="button" class="btn" data-act="wood-no">لأ</button>';
+  }else{
+    h+='<button type="button" class="btn ghost" data-act="wood-ask">حذف</button>';
+  }
+  return h+'</div></div>';
+}
+
+function woodView(w){
+  var t=totals(w),k=kindOf(w),h,list;
+  if(k==='misc'){
+    list=items(w).slice().sort(function(a,b){return a.name.localeCompare(b.name,'ar');});
+    if(S.hideZero)list=list.filter(function(i){return i.qty>0||(S.row&&S.row.th==='_'&&S.row.sz===i.id);});
+    h=woodHead(w,'<b>'+fmtN(t.n)+'</b> صنف · <b>'+fmtN(t.q)+'</b> عدد')+'<p class="legend">اكتب اسم الصنف وعدده.</p><section class="th">';
+    if(list.length){
+      h+='<div class="tbl"><table><thead><tr><th>الصنف</th><th>العدد</th><th></th></tr></thead><tbody>'+
+        list.map(function(i){return itemRow(w,i);}).join('')+'</tbody></table></div>';
+    }else{
+      h+='<p class="empty-th">'+(items(w).length?'كل الأصناف خلصت.':'لسه مفيش أصناف. ضيف أول صنف من تحت.')+'</p>';
+    }
+    h+='<form class="add-size two" data-form="add-item">'+fld('f-it-n','اسم الصنف','','مفصلات')+fld('f-it-q','العدد','','10',true)+
+      '<button class="btn pri">إضافة صنف</button></form>'+errBox('add-item')+'</section>';
+    return h;
+  }
+  if(k==='board'){
+    list=ths(w).slice().sort(function(a,b){return a.mm-b.mm;});
+    if(S.hideZero)list=list.filter(function(x){return bq(x)>0||(S.row&&S.row.th===x.id);});
+    h=woodHead(w,'<b>'+fmtN(t.p)+'</b> لوح · <b>'+fmtN(t.n)+'</b> تخانة')+'<p class="legend">سجّل لكل تخانة عدد الألواح. التخانة بالمللي.</p><section class="th">';
+    if(list.length){
+      h+='<div class="tbl"><table><thead><tr><th>التخانة</th><th>العدد</th><th></th></tr></thead><tbody>'+
+        list.map(function(x){return thRow(w,x);}).join('')+'</tbody></table></div>';
+    }else{
+      h+='<p class="empty-th">'+(ths(w).length?'كل التخانات خلصت.':'لسه مفيش تخانات. ضيف أول تخانة من تحت.')+'</p>';
+    }
+    h+='<form class="add-size two" data-form="add-bt">'+fld('f-bt-mm','التخانة (مم)','','18',true)+fld('f-bt-q','العدد (لوح)','','50',true)+
+      '<button class="btn pri">إضافة تخانة</button></form>'+errBox('add-bt')+'</section>';
+    return h;
+  }
+  h=woodHead(w,'<b>'+fmtN(t.p)+'</b> قطعة · <b>'+fmt3(t.v)+'</b> م³');
+  h+='<p class="legend">التخانة بالمللي · العرض بالسنتي · الطول بالمتر. الحجم = التخانة × العرض × الطول × العدد.</p>';
+  ths(w).slice().sort(function(a,b){return a.mm-b.mm;}).forEach(function(th){h+=thCard(w,th);});
+  h+='<form class="add-th" data-form="add-th">'+fld('f-th-mm','تخانة جديدة (مم)','','25',true)+'<button class="btn">+ إضافة تخانة</button>'+errBox('add-th')+'</form>';
+  return h;
+}
+
+function emptyMain(){
+  if(!S.loaded){
+    return '<div class="empty"><h2>بنجهّز المخزن…</h2><p>'+(S.slow?'تعذّر الوصول للبيانات دلوقتي. لسه بنحاول.':'ثواني وهتلاقي الأقسام والتخانات.')+'</p></div>';
+  }
+  return '<div class="empty"><h2>المخزن فاضي</h2><p>ابدأ بإضافة قسم من القايمة اللي على اليمين: خشب (زان، موسكي…) بتخانات ومقاسات، ألواح (أبلاكاش، فايبر، كونتر…) بتخانة وعدد، أو متنوعات (بكتات، إكسسوارات…) باسم وعدد.</p></div>';
+}
+
+function logView(){
+  var h='<section class="log"><h2>آخر الحركات</h2>';
+  if(!S.log.length){return h+'<ul><li class="none">مفيش حركات لسه. أول وارد أو منصرف هيظهر هنا.</li></ul></section>';}
+  var L={in:'وارد',out:'منصرف',adj:'تعديل',del:'حذف'};
+  h+='<ul>'+S.log.slice(0,40).map(function(e){
+    var kd=e.kd||'timber',q=fmtN(e.q),unit,tail;
+    if(kd==='misc'){unit='';tail=esc(e.w)+' · '+esc(e.n||'');}
+    else if(kd==='board'){unit=' لوح';tail=esc(e.w)+' '+fmtDim(e.mm)+' مم';}
+    else{unit=' قطعة';tail=esc(e.w)+' '+fmtDim(e.mm)+' مم · '+fmtDim(e.l)+' م × '+fmtDim(e.wd)+' سم';}
+    if(e.k==='adj'&&e.q>0)q='+'+q;
+    return '<li><time>'+fmtTime(e.t)+'</time><span class="tag '+e.k+'">'+L[e.k]+'</span><span class="what">'+q+unit+' — '+tail+'</span></li>';
+  }).join('')+'</ul>';
+  return h+'</section>';
+}
+
+function view(){
+  var w=curWood();
+  return header()+notices()+'<div class="layout">'+rail()+'<main>'+(w?woodView(w):emptyMain())+'</main></div>'+logView()+
+    (S.toast?'<div class="toast" role="status"><span>'+esc(S.toast)+'</span></div>':'');
+}
+
+function render(){
+  var ae=document.activeElement,fid=ae&&ae.id,ss=null,se=null;
+  try{ss=ae.selectionStart;se=ae.selectionEnd;}catch(e){}
+  $app.innerHTML=view();
+  if(fid){var el=document.getElementById(fid);if(el){el.focus();try{if(ss!=null)el.setSelectionRange(ss,se);}catch(e){}}}
+}
+
+/* ---------- actions ---------- */
+function mutate(fn){var w=curWood();if(!w)return;fn(w);touch(w);render();}
+function findSize(w,thId,szId){var t=ths(w).find(function(x){return x.id===thId;});if(!t)return {};var s=(t.sizes||[]).find(function(x){return x.id===szId;});return {t:t,s:s};}
+function findItem(w,id){return items(w).find(function(x){return x.id===id;});}
+function findTh(w,id){return ths(w).find(function(x){return x.id===id;});}
+function isInt(n){return Number.isInteger(n);}
+
+function act(a,d){
+  S.ferr=S.ferr&&S.ferr.k==='global'?S.ferr:null;
+  var w=curWood();
+  switch(a){
+    case 'sel':S.sel=d.id;S.row=null;S.delWood=false;S.delTh=null;S.rename=false;savePref();render();break;
+    case 'kind':S.newKind=d.k;render();focusId('f-wood-name');break;
+    case 'wood-add':S.addWood=true;render();focusId('f-wood-name');break;
+    case 'wood-add-no':S.addWood=false;clearDrafts('f-wood');render();break;
+    case 'rename-open':S.rename=true;render();focusId('f-rename');break;
+    case 'rename-no':S.rename=false;clearDrafts('f-rename');render();break;
+    case 'wood-ask':S.delWood=true;render();break;
+    case 'wood-no':S.delWood=false;render();break;
+    case 'wood-yes':
+      if(w){var id=w.id;S.woods=S.woods.filter(function(x){return x.id!==id;});removeWoodDoc(id);S.sel=S.woods.length?S.woods[0].id:null;S.delWood=false;savePref();render();}
+      break;
+    case 'th-ask':S.delTh=d.th;render();break;
+    case 'th-no':S.delTh=null;render();break;
+    case 'th-yes':S.delTh=null;mutate(function(x){x.thicknesses=ths(x).filter(function(t){return t.id!==d.th;});});break;
+    case 'mv':
+      if(!w)break;
+      S.row={th:d.th,sz:d.sz,mode:d.k};clearDrafts('f-mv');clearDrafts('f-ed');
+      render();
+      focusId(d.k==='edit'?(kindOf(w)==='misc'?'f-ed-n':(kindOf(w)==='board'?'f-ed-mm':'f-ed-l')):'f-mv-q');break;
+    case 'row-no':S.row=null;render();break;
+    case 'sz-del':
+      if(!w)break;
+      var k=kindOf(w);
+      if(k==='misc'){
+        var it=findItem(w,d.sz);
+        if(it&&it.qty>0)addLog({k:'del',kd:'misc',wid:w.id,w:w.name,n:it.name,q:it.qty});
+        S.row=null;mutate(function(x){x.items=items(x).filter(function(y){return y.id!==d.sz;});});
+      }else if(k==='board'){
+        var bt=findTh(w,d.th);
+        if(bt&&bq(bt)>0)addLog({k:'del',kd:'board',wid:w.id,w:w.name,mm:bt.mm,q:bq(bt)});
+        S.row=null;mutate(function(x){x.thicknesses=ths(x).filter(function(y){return y.id!==d.th;});});
+      }else{
+        var r=findSize(w,d.th,d.sz);
+        if(r.s&&r.s.qty>0)addLog({k:'del',kd:'timber',wid:w.id,w:w.name,mm:r.t.mm,l:r.s.len,wd:r.s.wid,q:r.s.qty});
+        S.row=null;mutate(function(x){var t=ths(x).find(function(y){return y.id===d.th;});if(t)t.sizes=t.sizes.filter(function(s){return s.id!==d.sz;});});
+      }
+      break;
+    case 'ex-ask':S.clearAsk=true;render();break;
+    case 'ex-no':S.clearAsk=false;render();break;
+    case 'ex-yes':clearExamples();break;
+    case 'export':exportCsv();break;
+  }
+}
+
+function clearExamples(){
+  var gone=S.woods.filter(function(w){return w.example;}).map(function(w){return w.id;});
+  gone.forEach(removeWoodDoc);
+  S.woods=S.woods.filter(function(w){return !w.example;});
+  var before=S.log.length;
+  S.log=S.log.filter(function(e){return gone.indexOf(e.wid)===-1;});
+  if(S.log.length!==before)persistLog();
+  S.clearAsk=false;S.row=null;
+  if(!curWood())S.sel=S.woods.length?S.woods[0].id:null;
+  saveLocalData();savePref();render();
+}
+
+function submit(form,d){
+  S.ferr=S.ferr&&S.ferr.k==='global'?S.ferr:null;
+  var w=curWood();
+  if(form==='add-wood'){
+    var name=rd('f-wood-name').trim();
+    if(!name)return setErr('add-wood','اكتب الاسم.');
+    if(S.woods.some(function(x){return x.name.trim().toLowerCase()===name.toLowerCase();}))return setErr('add-wood','الاسم ده موجود قبل كده.');
+    var o=S.woods.reduce(function(m,x){return Math.max(m,x.order||0);},0)+1;
+    var nw={id:'w'+uid(),name:name,kind:S.newKind,ci:S.woods.length%WC.length,order:o,updated:Date.now()};
+    if(S.newKind==='misc')nw.items=[];else nw.thicknesses=[];
+    S.woods.push(nw);S.sel=nw.id;S.addWood=false;S.row=null;clearDrafts('f-wood');persistWood(nw);savePref();render();
+    focusId(S.newKind==='misc'?'f-it-n':(S.newKind==='board'?'f-bt-mm':'f-th-mm'));
+    return;
+  }
+  if(!w)return;
+  var k0=kindOf(w);
+  if(form==='rename'){
+    var n=rd('f-rename').trim();
+    if(!n)return setErr('rename','اكتب الاسم.');
+    if(S.woods.some(function(x){return x.id!==w.id&&x.name.trim().toLowerCase()===n.toLowerCase();}))return setErr('rename','الاسم ده موجود قبل كده.');
+    S.rename=false;clearDrafts('f-rename');mutate(function(x){x.name=n;});return;
+  }
+  if(form==='add-th'){
+    var mm=num(rd('f-th-mm'));
+    if(!(mm>0&&mm<=500))return setErr('add-th','اكتب التخانة بالمللي (مثال 25).');
+    var ex=ths(w).find(function(t){return same(t.mm,mm);});
+    if(ex){clearDrafts('f-th-mm');render();toast('التخانة دي موجودة. ضيف المقاس فيها.');focusId('f-as-l-'+ex.id);return;}
+    var nt={id:'t'+uid(),mm:mm,sizes:[]};
+    clearDrafts('f-th-mm');
+    mutate(function(x){x.thicknesses=ths(x);x.thicknesses.push(nt);});
+    focusId('f-as-l-'+nt.id);return;
+  }
+  if(form==='add-bt'){
+    var bmm=num(rd('f-bt-mm')),bqn=num(rd('f-bt-q'));
+    if(!(bmm>0&&bmm<=500))return setErr('add-bt','اكتب التخانة بالمللي (مثال 18).');
+    if(!(isInt(bqn)&&bqn>=0))return setErr('add-bt','اكتب العدد (رقم صحيح).');
+    var bex=ths(w).find(function(t){return same(t.mm,bmm);});
+    clearDrafts('f-bt-');
+    mutate(function(x){
+      x.thicknesses=ths(x);
+      if(bex){bex.qty=bq(bex)+bqn;delete bex.sizes;}
+      else x.thicknesses.push({id:'t'+uid(),mm:bmm,qty:bqn});
+    });
+    if(bqn>0)addLog({k:'in',kd:'board',wid:w.id,w:w.name,mm:bmm,q:bqn});
+    toast(bex?'التخانة موجودة، اتزودت الكمية.':'اتضافت التخانة.');
+    focusId('f-bt-mm');return;
+  }
+  if(form==='add-size'){
+    var k=d.th,l=num(rd('f-as-l-'+k)),wd=num(rd('f-as-w-'+k)),q=num(rd('f-as-q-'+k)),ek='add-size-'+k;
+    if(!(l>0&&l<=30))return setErr(ek,'اكتب الطول بالمتر (مثال 4 أو 3.5).');
+    if(!(wd>0&&wd<=300))return setErr(ek,'اكتب العرض بالسنتي (مثال 10).');
+    if(!(isInt(q)&&q>=0))return setErr(ek,'اكتب العدد (رقم صحيح).');
+    var th=findTh(w,k);if(!th)return;
+    var dup=th.sizes.find(function(s){return same(s.len,l)&&same(s.wid,wd);});
+    clearDrafts('f-as-');
+    mutate(function(){
+      if(dup)dup.qty+=q;else th.sizes.push({id:'s'+uid(),len:l,wid:wd,qty:q});
+    });
+    if(q>0)addLog({k:'in',kd:'timber',wid:w.id,w:w.name,mm:th.mm,l:l,wd:wd,q:q});
+    toast(dup?'المقاس موجود، اتزودت الكمية.':'اتضاف المقاس.');
+    focusId('f-as-l-'+k);return;
+  }
+  if(form==='add-item'){
+    var iname=rd('f-it-n').trim(),iq=num(rd('f-it-q'));
+    if(!iname)return setErr('add-item','اكتب اسم الصنف.');
+    if(!(isInt(iq)&&iq>=0))return setErr('add-item','اكتب العدد (رقم صحيح).');
+    var idup=items(w).find(function(x){return x.name.trim().toLowerCase()===iname.toLowerCase();});
+    clearDrafts('f-it-');
+    mutate(function(x){
+      x.items=items(x);
+      if(idup)idup.qty+=iq;else x.items.push({id:'i'+uid(),name:iname,qty:iq});
+    });
+    if(iq>0)addLog({k:'in',kd:'misc',wid:w.id,w:w.name,n:iname,q:iq});
+    toast(idup?'الصنف موجود، اتزودت الكمية.':'اتضاف الصنف.');
+    focusId('f-it-n');return;
+  }
+  if(form==='row'&&S.row){
+    var m=S.row.mode;
+    if(k0==='misc'){
+      var it=findItem(w,d.sz);if(!it)return;
+      if(m==='in'||m==='out'){
+        var iq2=num(rd('f-mv-q'));
+        if(!(isInt(iq2)&&iq2>=1))return setErr('row','اكتب العدد (رقم صحيح من 1).');
+        if(m==='out'&&iq2>it.qty)return setErr('row','المتاح '+fmtN(it.qty)+' بس.');
+        S.row=null;clearDrafts('f-mv');
+        mutate(function(){it.qty+=(m==='in'?iq2:-iq2);});
+        addLog({k:m,kd:'misc',wid:w.id,w:w.name,n:it.name,q:iq2});
+        toast(m==='in'?'اتسجّل الوارد.':'اتسجّل المنصرف.');
+        return;
+      }
+      if(m==='edit'){
+        var en=rd('f-ed-n').trim(),eq2=num(rd('f-ed-q'));
+        if(!en)return setErr('row','اكتب اسم الصنف.');
+        if(!(isInt(eq2)&&eq2>=0))return setErr('row','اكتب العدد (رقم صحيح).');
+        var od=items(w).find(function(x){return x.id!==it.id&&x.name.trim().toLowerCase()===en.toLowerCase();});
+        if(od)return setErr('row','الصنف ده موجود قبل كده.');
+        var oldq=it.qty;
+        S.row=null;clearDrafts('f-ed');
+        mutate(function(){it.name=en;it.qty=eq2;delete it.unit;});
+        if(eq2!==oldq)addLog({k:'adj',kd:'misc',wid:w.id,w:w.name,n:en,q:eq2-oldq});
+        toast('اتحفظ التعديل.');
+      }
+      return;
+    }
+    if(k0==='board'){
+      var bt=findTh(w,d.th);if(!bt)return;
+      var cq=bq(bt);
+      if(m==='in'||m==='out'){
+        var mq2=num(rd('f-mv-q'));
+        if(!(isInt(mq2)&&mq2>=1))return setErr('row','اكتب العدد (رقم صحيح من 1).');
+        if(m==='out'&&mq2>cq)return setErr('row','المتاح '+fmtN(cq)+' لوح بس.');
+        S.row=null;clearDrafts('f-mv');
+        mutate(function(){bt.qty=cq+(m==='in'?mq2:-mq2);delete bt.sizes;});
+        addLog({k:m,kd:'board',wid:w.id,w:w.name,mm:bt.mm,q:mq2});
+        toast(m==='in'?'اتسجّل الوارد.':'اتسجّل المنصرف.');
+        return;
+      }
+      if(m==='edit'){
+        var emm=num(rd('f-ed-mm')),beq=num(rd('f-ed-q'));
+        if(!(emm>0&&emm<=500))return setErr('row','اكتب التخانة بالمللي.');
+        if(!(isInt(beq)&&beq>=0))return setErr('row','اكتب العدد (رقم صحيح).');
+        var bo=ths(w).find(function(x){return x.id!==bt.id&&same(x.mm,emm);});
+        if(bo)return setErr('row','التخانة دي موجودة قبل كده.');
+        S.row=null;clearDrafts('f-ed');
+        mutate(function(){bt.mm=emm;bt.qty=beq;delete bt.sizes;});
+        if(beq!==cq)addLog({k:'adj',kd:'board',wid:w.id,w:w.name,mm:emm,q:beq-cq});
+        toast('اتحفظ التعديل.');
+      }
+      return;
+    }
+    var r=findSize(w,d.th,d.sz);if(!r.s)return;
+    if(m==='in'||m==='out'){
+      var mq=num(rd('f-mv-q'));
+      if(!(isInt(mq)&&mq>=1))return setErr('row','اكتب العدد (رقم صحيح من 1).');
+      if(m==='out'&&mq>r.s.qty)return setErr('row','المتاح '+fmtN(r.s.qty)+' قطعة بس.');
+      var s=r.s,t=r.t;
+      S.row=null;clearDrafts('f-mv');
+      mutate(function(){s.qty+=(m==='in'?mq:-mq);});
+      addLog({k:m,kd:'timber',wid:w.id,w:w.name,mm:t.mm,l:s.len,wd:s.wid,q:mq});
+      toast(m==='in'?'اتسجّل الوارد.':'اتسجّل المنصرف.');
+      return;
+    }
+    if(m==='edit'){
+      var el=num(rd('f-ed-l')),ew=num(rd('f-ed-w')),eq=num(rd('f-ed-q'));
+      if(!(el>0&&el<=30))return setErr('row','اكتب الطول بالمتر.');
+      if(!(ew>0&&ew<=300))return setErr('row','اكتب العرض بالسنتي.');
+      if(!(isInt(eq)&&eq>=0))return setErr('row','اكتب العدد (رقم صحيح).');
+      var other=r.t.sizes.find(function(x){return x.id!==r.s.id&&same(x.len,el)&&same(x.wid,ew);});
+      if(other)return setErr('row','المقاس ده موجود قبل كده في نفس التخانة.');
+      var old=r.s.qty,sz=r.s,tk=r.t;
+      S.row=null;clearDrafts('f-ed');
+      mutate(function(){sz.len=el;sz.wid=ew;sz.qty=eq;});
+      if(eq!==old)addLog({k:'adj',kd:'timber',wid:w.id,w:w.name,mm:tk.mm,l:el,wd:ew,q:eq-old});
+      toast('اتحفظ التعديل.');
+    }
+  }
+}
+
+function exportCsv(){
+  var rows=[['القسم','المجموعة','الصنف','التخانة (مم)','الطول (م)','العرض (سم)','العدد','الحجم (م3)']];
+  S.woods.slice().sort(function(a,b){return KORDER.indexOf(kindOf(a))-KORDER.indexOf(kindOf(b))||(a.order||0)-(b.order||0);}).forEach(function(w){
+    var k=kindOf(w),lab=KINDS[k].label;
+    if(k==='misc'){
+      items(w).forEach(function(i){rows.push([lab,w.name,i.name,'','','',i.qty,'']);});
+      return;
+    }
+    if(k==='board'){
+      ths(w).slice().sort(function(a,b){return a.mm-b.mm;}).forEach(function(t){rows.push([lab,w.name,'',fmtDim(t.mm),'','',bq(t),'']);});
+      return;
+    }
+    ths(w).slice().sort(function(a,b){return a.mm-b.mm;}).forEach(function(t){
+      t.sizes.slice().sort(function(a,b){return a.len-b.len||a.wid-b.wid;}).forEach(function(s){
+        rows.push([lab,w.name,'',fmtDim(t.mm),fmtDim(s.len),fmtDim(s.wid),s.qty,vol(t,s).toFixed(3)]);
+      });
+    });
+  });
+  var csv='﻿'+rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+  if(dl){dl.save({filename:'wood-inventory.csv',data:csv}).then(function(){toast('اتحفظ الملف.');}).catch(function(){toast('تعذّر حفظ الملف.');});return;}
+  try{var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='wood-inventory.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);toast('تم تنزيل ملف النسخة الاحتياطية.');}
+  catch(e){toast('تعذّر تنزيل الملف.');}
+}
+
+/* ---------- events ---------- */
+$app.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');
+  if(!b||b.tagName==='INPUT')return;
+  act(b.dataset.act,b.dataset);
+});
+$app.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset&&t.dataset.act==='hide0'){S.hideZero=t.checked;savePref();render();}
+});
+$app.addEventListener('input',function(e){if(e.target.id)S.drafts[e.target.id]=e.target.value;});
+$app.addEventListener('submit',function(e){
+  e.preventDefault();
+  var f=e.target.closest('form');if(f)submit(f.dataset.form,f.dataset);
+});
+
+/* ---------- boot ---------- */
+function ingest(){
+  if(!S.sel||!curWood())S.sel=S.woods.length?S.woods[0].id:null;
+}
+async function init(){
+  var pref=loadPref();
+  render();
+  var timer=setTimeout(function(){if(!S.loaded){S.slow=true;render();}},10000);
+  try{db=window.claude&&window.claude.use?await window.claude.use('db'):null;}catch(e){db=null;}
+  try{dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;}catch(e){dl=null;}
+  S.canExport=true;
+  if(!db){
+    clearTimeout(timer);
+    try{var saved=JSON.parse(localStorage.getItem('wood.inventory.v1')||'null');if(saved){S.woods=Array.isArray(saved.woods)?saved.woods:[];S.log=Array.isArray(saved.log)?saved.log:[];}}catch(e){S.woods=[];S.log=[];S.ferr={k:'global',msg:'تعذّر قراءة البيانات المحفوظة في المتصفح.'};}
+    S.mode='local';S.loaded=true;S.sel=pref;ingest();render();return;
+  }
+  S.sel=pref;
+  db.collection('woods').onSnapshot(function(snap){
+    S.woods=snap.docs.map(function(d){var o=clone(d.data());o.id=d.id;return o;}).sort(function(a,b){return (a.order||0)-(b.order||0);});
+    ingest();
+    if(!snap.metadata.fromCache||snap.size>0){S.loaded=true;S.slow=false;S.mode='db';clearTimeout(timer);}
+    render();
+  },function(){S.mode='error';S.loaded=true;clearTimeout(timer);render();});
+  db.doc('meta/log').onSnapshot(function(snap){
+    var d=snap.exists?snap.data():null;
+    S.log=d&&d.items?clone(d.items):[];
+    render();
+  },function(){});
+}
+init();
+})();
+</script>
+
+</body></html>
